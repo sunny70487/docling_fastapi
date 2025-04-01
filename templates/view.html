@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>檢視文件 - {{ filename }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.2.12/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/yaml.js/2.0.0/yaml.min.js"></script>
+    <style>
+        /* 深色模式開關 - 不再固定 */
+        /* #global-dark-mode-toggle { ... } */ /* 移除 fixed 定位 */
+
+        /* 如果需要在小屏幕上隱藏文字 (可保留) */
+        @media (max-width: 576px) {
+            #global-dark-mode-toggle .form-check-label {
+                display: none;
+            }
+        }
+
+        /* 固定標題欄 */
+        .card-header.sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 1020; /* Bootstrap 標準 z-index 範圍 */
+            /* 確保背景色 */
+            background-color: white; /* 明確指定淺色模式背景 */
+            /* box-shadow: 0 2px 4px rgba(0,0,0,.1); */ /* 可選陰影 */
+        }
+        /* 為 sticky header 預留空間 */
+        body {
+             /* padding-top: 70px; */ /* 移除 body padding，改為讓 sticky header 自然推開內容 */
+        }
+        /* 深色模式下的固定標題欄背景和文字 */
+        .dark-mode .card-header.sticky-header {
+             /* 確保背景色 */
+             background-color: var(--bs-dark-card-cap-bg, #212529); /* 使用更深的顏色 */
+             /* 設定標題文字顏色 */
+             color: #e0e0e0; /* 預設文字顏色 */
+        }
+        /* 確保標題內的連結和小型文字也變色 */
+        .dark-mode .card-header.sticky-header h5,
+        .dark-mode .card-header.sticky-header h5 small,
+        .dark-mode .card-header.sticky-header h5 a {
+            color: inherit; /* 繼承父元素的顏色 (#e0e0e0) */
+        }
+        /* 深色模式下，右側按鈕樣式調整 (如果需要) */
+        .dark-mode .card-header.sticky-header .btn-outline-secondary {
+            color: #adb5bd; /* 淺灰色文字 */
+            border-color: #6c757d; /* 邊框顏色 */
+        }
+        .dark-mode .card-header.sticky-header .btn-outline-secondary:hover {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        /* 深色模式下的徽章背景可能也需要調整，但 Bootstrap 應該會處理 */
+
+        /* 深色模式下的其他元素調整 */
+        .dark-mode .breadcrumb-item a {
+            color: #adb5bd; /* 淺灰色 */
+        }
+        .dark-mode .breadcrumb-item.active {
+            color: #6c757d; /* 深灰色 */
+        }
+        .dark-mode .card-body {
+            /* 與 .dark-mode .card 的背景色一致 */
+            background-color: var(--bs-dark-card-bg, #242424);
+        }
+        .dark-mode .btn-outline-primary {
+            color: #58a6ff;
+            border-color: #58a6ff;
+        }
+        .dark-mode .btn-outline-primary:hover {
+            color: #fff;
+            background-color: #58a6ff;
+            border-color: #58a6ff;
+        }
+        .dark-mode .btn-outline-secondary {
+            /* 已在 sticky header 部分定義，確保通用性 */
+            color: #adb5bd;
+            border-color: #6c757d;
+        }
+        .dark-mode .btn-outline-secondary:hover {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        /* 文件資訊卡片 */
+        .dark-mode .card.mt-3 .card-header {
+             background-color: var(--bs-dark-card-cap-bg, #212529);
+             color: #e0e0e0;
+             border-color: #444;
+        }
+
+        /* 新增浮動目錄樣式 - 移到左側 */
+        .floating-toc {
+            position: fixed;
+            top: 80px; /* 調整頂部距離 (現在無需考慮 body padding) */
+            left: 20px; /* 定位到左側 */
+            width: 250px;
+            max-height: calc(100vh - 100px); /* 調整最大高度 */
+            overflow-y: auto;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transition: transform 0.3s ease-in-out, visibility 0.3s; /* 新增過渡效果 */
+            visibility: visible; /* 預設可見 */
+        }
+        /* 新增隱藏樣式 */
+        .floating-toc.hidden {
+             transform: translateX(-110%); /* 向左移出視窗 (增加一點確保完全隱藏) */
+             visibility: hidden; /* 配合 transform 隱藏 */
+         }
+
+        .floating-toc h6 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .floating-toc ul {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+        .floating-toc li {
+            margin-bottom: 5px;
+        }
+        .floating-toc a {
+            text-decoration: none;
+            color: #333;
+            font-size: 0.9em;
+        }
+        .floating-toc a:hover {
+            color: #0d6efd;
+        }
+        /* 深色模式下的浮動目錄 */
+        .dark-mode .floating-toc {
+            background-color: rgba(36, 36, 36, 0.9);
+            border-color: #444;
+            color: #58a6ff;
+        }
+        .dark-mode .floating-toc a {
+            color: #ccc;
+        }
+        .dark-mode .floating-toc a:hover {
+            color: #58a6ff;
+        }
+        /* 標題層級縮排 */
+        .toc-level-1 { padding-left: 0px; }
+        .toc-level-2 { padding-left: 15px; }
+        .toc-level-3 { padding-left: 30px; }
+        .toc-level-4 { padding-left: 45px; }
+        .toc-level-5 { padding-left: 60px; }
+        .toc-level-6 { padding-left: 75px; }
+
+        /* 其他樣式保持不變 */
+        .dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        
+        .dark-mode .card {
+            background-color: #242424;
+            border-color: #444;
+        }
+        
+        /* .dark-mode .card-header - 已由 .dark-mode .card-header.sticky-header 處理 */
+        
+        .dark-mode pre {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+        
+        .markdown-body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            padding: 20px;
+            border-radius: 6px;
+        }
+        
+        .markdown-body.dark {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+        
+        .markdown-body.dark img {
+            background-color: #2d2d2d;
+        }
+        
+        .markdown-body.dark a {
+            color: #58a6ff;
+        }
+        
+        .markdown-body.dark code {
+            background-color: #2d2d2d;
+        }
+        
+        pre {
+            border-radius: 6px;
+            max-height: 600px;
+            overflow: auto;
+        }
+
+        /* TOC 切換按鈕樣式 */
+        #toggle-toc-btn {
+            position: fixed;
+            top: 80px; /* 調整回原始位置或根據需要調整 */
+            left: 20px;
+            z-index: 1050; /* 確保在 TOC 之上 */
+            transition: transform 0.3s ease-in-out;
+        }
+         /* 當 TOC 可見時，將按鈕移到 TOC 右邊 */
+        #toggle-toc-btn.toc-visible {
+             transform: translateX(260px); /* TOC寬度 + 一點間距 */
+         }
+
+        /* 主內容區域調整 */
+        .main-content-area {
+             transition: margin-left 0.3s ease-in-out;
+             margin-left: 20px; /* 預設邊距 */
+             /* padding-top: 1rem;  移除 */
+         }
+         
+         .main-content-area.toc-visible {
+             margin-left: 290px; /* TOC 可見時增加左邊距 (TOC 寬度 + 按鈕寬度/間距) */
+         }
+
+        /* 加強深色模式 - 新增樣式以確保整個頁面更加一致 */
+        .dark-mode .breadcrumb {
+            background-color: #242424;
+            color: #e0e0e0;
+        }
+        
+        .dark-mode .badge.bg-primary,
+        .dark-mode .badge.bg-success,
+        .dark-mode .badge.bg-info,
+        .dark-mode .badge.bg-warning,
+        .dark-mode .badge.bg-danger,
+        .dark-mode .badge.bg-secondary {
+            /* 增強徽章對比度 */
+            opacity: 0.9;
+        }
+        
+        .dark-mode #source-content pre {
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+        }
+        
+        .dark-mode #source-content code {
+            color: #e0e0e0;
+        }
+        
+        /* 深色模式下的按鈕樣式統一 */
+        .dark-mode .btn {
+            border-color: #555;
+        }
+        
+        .dark-mode .btn-primary {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+        
+        .dark-mode a,
+        .dark-mode .btn-link {
+            color: #58a6ff;
+        }
+    </style>
+</head>
+<body data-format="{{ format }}" data-content="{{ content|e }}">
+    <!-- 深色模式開關移出 -->
+    <!-- <div class="form-check form-switch" id="global-dark-mode-toggle"> ... </div> -->
+
+    <!-- 新增 TOC 切換按鈕 (移到 body 開頭確保 z-index 生效) -->
+    <button class="btn btn-sm btn-outline-secondary d-none d-md-block" type="button" id="toggle-toc-btn" title="顯示/隱藏目錄">
+        <i class="bi bi-list-ul"></i>
+    </button>
+
+    <div class="container-fluid mt-4">
+        <!-- 移除深色模式開關 -->
+        <!-- <div class="d-flex justify-content-end mb-2"> ... </div> -->
+
+        <div class="row">
+            <!-- 主內容區域 (增加 class) -->
+            <div class="col-md-12 main-content-area">  <!-- 預設佔滿寬度，讓 margin-left 控制位置 -->
+                <!-- 修改麵包屑 -->
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/#documents-panel">文件列表</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{ filename }}</li>
+                    </ol>
+                </nav>
+                
+                <div class="card">
+                    <!-- 標題欄增加 sticky-header class -->
+                    <div class="card-header d-flex justify-content-between align-items-center sticky-header">
+                        <!-- 標題和來源資訊 -->
+                        <h5 class="mb-0 me-3">{{ filename }} <!-- 增加右邊距避免與右側按鈕太近 -->
+{% if source_info %}
+    <small style="font-size: 0.7em; color: #6c757d;">
+        (來自: 
+        {% if source_info.startswith('http://') or source_info.startswith('https://') %}
+            <a href="{{ source_info }}" target="_blank" style="color: inherit;">{{ source_info }}</a>
+        {% else %}
+            {{ source_info }}
+        {% endif %}
+        )
+    </small>
+{% endif %}</h5>
+                        <!-- 格式標籤和下載按鈕 (移到右側) -->
+                        <div class="ms-auto d-flex align-items-center"> <!-- 使用 ms-auto 推到右邊 -->
+                            <span class="badge me-2 {% if format == 'markdown' %}bg-primary
+                                  {% elif format == 'json' %}bg-success
+                                  {% elif format == 'yaml' %}bg-warning
+                                  {% elif format == 'html' %}bg-info
+                                  {% elif format == 'text' %}bg-secondary
+                                  {% elif format == 'doctags' %}bg-dark
+                                  {% else %}bg-secondary{% endif %}">
+                                {{ format }}
+                            </span>
+                            <a href="/output/{{ filename }}" class="btn btn-sm btn-outline-secondary" download>
+                                <i class="bi bi-download"></i> <span class="d-none d-sm-inline">下載</span> <!-- 小屏幕隱藏文字 -->
+                            </a>
+                        </div>
+                        
+                        <!-- 深色模式開關已移出 -->
+                        
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div class="btn-group" role="group" aria-label="檢視選項">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="view-rendered" {% if format in ['markdown', 'html'] %}{% else %}disabled{% endif %}>
+                                    <i class="bi bi-eye"></i> 渲染檢視
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="view-source">
+                                    <i class="bi bi-code-slash"></i> 原始碼
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 內容容器，用於生成目錄 -->
+                        <div id="document-content-wrapper">
+                            <!-- 渲染檢視 -->
+                            <div id="rendered-content" class="{% if format not in ['markdown', 'html'] %}d-none{% endif %}">
+                                {% if format == 'markdown' %}
+                                    <div id="markdown-content" class="markdown-body"></div>
+                                {% elif format == 'html' %}
+                                    <div id="html-content">{{ content|safe }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- 原始碼檢視 -->
+                            <div id="source-content" class="{% if format in ['markdown', 'html'] %}d-none{% endif %}">
+                                <pre><code id="code-content" class="language-{{ format }}">{{ content }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 可能的文件資訊或相關操作 -->
+                <div class="card mt-3">
+                     <div class="card-header">
+                        <h6 class="mb-0">文件資訊</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>檔案名稱:</strong> {{ filename }}</p>
+                                <p class="mb-1"><strong>格式:</strong> {{ format }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-grid gap-2">
+                                    <a href="/#documents-panel" class="btn btn-outline-primary">返回文件列表</a> <!-- 更新連結 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 浮動目錄區域 (移到主內容區之外，使其 fixed 定位正確) -->
+            <div class="floating-toc d-none d-md-block" id="toc-container">
+                <h6>目錄</h6>
+                <ul id="toc-list"></ul>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 用於生成 slug 的輔助函數
+        function slugify(text) {
+            if (!text) return ''; // 防止空字串或 null 導致錯誤
+            return text.toString().toLowerCase()
+                .replace(/\s+/g, '-')       // Replace spaces with -
+                .replace(/[^\w\-]+/g, '')    // Remove all non-word chars
+                .replace(/\-\-+/g, '-')     // Replace multiple - with single -
+                .replace(/^-+/, '')          // Trim - from start of text
+                .replace(/-+$/, '');         // Trim - from end of text
+        }
+        
+        // 生成目錄的函數
+        function generateToc() {
+            const contentWrapper = document.getElementById('document-content-wrapper');
+            const tocList = document.getElementById('toc-list');
+            const tocContainer = document.getElementById('toc-container');
+            // 不需要檢查 tocContainer 是否存在於此，因為外面會檢查
+            if (!contentWrapper || !tocList) return; 
+            
+            tocList.innerHTML = ''; // 清空現有目錄
+            let headers = [];
+            const renderedContentEl = document.getElementById('rendered-content');
+            
+            // 查找渲染後的內容中的標題 (只在渲染模式下查找)
+            if (renderedContentEl && !renderedContentEl.classList.contains('d-none')) {
+                 headers = contentWrapper.querySelectorAll('#rendered-content h1, #rendered-content h2, #rendered-content h3, #rendered-content h4, #rendered-content h5, #rendered-content h6');
+            }
+            
+            if (headers.length === 0 && tocContainer) {
+                tocContainer.classList.add('hidden'); // 如果沒有標題則強制隱藏目錄
+                // 如果希望按鈕也隱藏/禁用
+                const toggleTocBtn = document.getElementById('toggle-toc-btn');
+                if(toggleTocBtn) toggleTocBtn.style.display = 'none';
+                return;
+            } 
+            // 不需要 else 顯示，因為顯示由 localStorage 控制
+            
+            headers.forEach((header, index) => {
+                const level = parseInt(header.tagName.substring(1));
+                const text = header.textContent.trim();
+                if (!text) return; // 跳過沒有文字的標題
+                
+                let id = header.id;
+                // 如果標題沒有 ID 或 ID 不符合規範，則生成一個
+                if (!id || !/^[a-zA-Z][\w\-]*$/.test(id)) { // 確保 ID 以字母開頭
+                    id = slugify(text);
+                    // 處理可能的重複 ID
+                    let counter = 1;
+                    let uniqueId = id;
+                    while(document.getElementById(uniqueId)) {
+                         uniqueId = `${id}-${counter}`;
+                         counter++;
+                    }
+                    id = uniqueId;
+                    header.id = id;
+                }
+                
+                const listItem = document.createElement('li');
+                const link = document.createElement('a');
+                link.href = '#' + id;
+                link.textContent = text;
+                listItem.appendChild(link);
+                listItem.classList.add('toc-level-' + level);
+                
+                // 確保點擊目錄連結後隱藏目錄的邏輯存在且正確
+                link.addEventListener('click', () => {
+                    // 確保 setTocVisibility 函數可用
+                    if (typeof setTocVisibility === 'function') { 
+                        setTocVisibility(false);
+                    } else {
+                        console.error("setTocVisibility 函數未定義，無法隱藏目錄。");
+                    }
+                });
+                
+                tocList.appendChild(listItem);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // 從 body 的 data-* 屬性獲取資料
+            const bodyElement = document.body;
+            const documentFormat = bodyElement.dataset.format || ''; 
+            // 需要解碼 HTML 實體以獲取原始 content
+            let rawContentFromTemplate = '';
+            const encodedContent = bodyElement.dataset.content || '';
+            try {
+                // 創建一個臨時元素來解碼 HTML 實體
+                const tempEl = document.createElement('textarea');
+                tempEl.innerHTML = encodedContent;
+                rawContentFromTemplate = tempEl.value;
+            } catch (e) {
+                console.error("解碼 content data-* 屬性時出錯:", e);
+                rawContentFromTemplate = encodedContent; // 降級：使用可能編碼過的值
+            }
+            
+            // 獲取 DOM 元素
+            const markdownContentEl = document.getElementById('markdown-content');
+            const htmlContentEl = document.getElementById('html-content');
+            const codeContentEl = document.getElementById('code-content');
+            const renderedContentEl = document.getElementById('rendered-content');
+            const sourceContentEl = document.getElementById('source-content');
+            const viewRenderedBtn = document.getElementById('view-rendered');
+            const viewSourceBtn = document.getElementById('view-source');
+            const body = document.body;
+            const markdownBody = document.querySelector('.markdown-body'); // 可能為 null
+            const tocContainer = document.getElementById('toc-container'); // 可能為 null
+            const toggleTocBtn = document.getElementById('toggle-toc-btn'); // 新增按鈕獲取
+            const mainContentArea = document.querySelector('.main-content-area'); // 主內容區
+
+            // 移除對已不存在的 darkModeToggle 元素的檢查
+            if (!body || !toggleTocBtn || !tocContainer || !mainContentArea) { 
+                 console.error("無法找到必要的頁面元素 (body, toc toggle, toc container, main content)");
+                 // 修改：確保必要的元素可用，但允許更多元素缺失
+                 // 對於 markdownContentEl 和 htmlContentEl，它們是根據 format 決定是否存在的，所以不要中斷執行
+                 if (!body) return; // 只有在缺少 body 時才中斷執行
+            }
+            
+            // --- TOC 控制邏輯 (移到前面確保函數先定義) ---
+            const tocStorageKey = 'tocVisible';
+
+            function setTocVisibility(visible) {
+                // 確保元素存在
+                if (!tocContainer || !mainContentArea || !toggleTocBtn) return;
+                
+                if (visible) {
+                    tocContainer.classList.remove('hidden');
+                    mainContentArea.classList.add('toc-visible');
+                    toggleTocBtn.classList.add('toc-visible'); // 移動按鈕
+                    toggleTocBtn.innerHTML = '<i class="bi bi-x-lg"></i>'; // 改成關閉圖標
+                    localStorage.setItem(tocStorageKey, 'true');
+                } else {
+                    tocContainer.classList.add('hidden');
+                    mainContentArea.classList.remove('toc-visible');
+                    toggleTocBtn.classList.remove('toc-visible'); // 移動按鈕
+                    toggleTocBtn.innerHTML = '<i class="bi bi-list-ul"></i>'; // 改回列表圖標
+                    localStorage.setItem(tocStorageKey, 'false');
+                }
+            }
+            // --- TOC 控制邏輯結束 ---
+            
+            // 再次移除對 darkModeToggle 的檢查
+            if (!body || !toggleTocBtn || !tocContainer || !mainContentArea) { 
+                 console.error("無法找到必要的頁面元素 (body, toc toggle, toc container, main content)");
+                 // 這裡也只檢查 body 元素是否缺失
+                 if (!body) return; // 只有在缺少 body 時才中斷執行
+            }
+
+            // 添加事件委派監聽器到目錄列表
+            const tocListElement = document.getElementById('toc-list');
+            if (tocListElement) {
+                tocListElement.addEventListener('click', function(event) {
+                    // 檢查點擊的是否為 <a> 標籤
+                    if (event.target && event.target.tagName === 'A') {
+                         // 確保 setTocVisibility 函數可用並調用
+                        if (typeof setTocVisibility === 'function') { 
+                            setTocVisibility(false);
+                        } else {
+                            console.error("setTocVisibility 函數未定義，無法隱藏目錄。");
+                        }
+                    }
+                });
+            }
+
+            // TOC 切換按鈕事件
+            toggleTocBtn.addEventListener('click', function() {
+                 // 檢查 TOC 是否有內容，如果沒有內容則不允許打開
+                 const tocList = document.getElementById('toc-list');
+                 if (tocContainer.classList.contains('hidden') && tocList && tocList.children.length === 0) {
+                    console.log("目錄無內容，無法顯示。");
+                    // 可以選擇禁用按鈕或顯示提示
+                    return; 
+                 }
+                 const isCurrentlyVisible = !tocContainer.classList.contains('hidden');
+                 setTocVisibility(!isCurrentlyVisible);
+            });
+
+            // 初始化 TOC 狀態
+            const savedTocState = localStorage.getItem(tocStorageKey);
+            const initialTocVisible = savedTocState !== 'false'; 
+            // 移除之前的 TOC 控制邏輯
+            // --- TOC 控制邏輯結束 ---
+
+
+            // 高亮顯示原始碼
+            if (codeContentEl) {
+                 try {
+                    let displayContent = rawContentFromTemplate; 
+                    // 對於 JSON/YAML，先美化再高亮
+                    if (documentFormat === 'json') {
+                        if (typeof rawContentFromTemplate === 'string' && rawContentFromTemplate.trim()) {
+                            try {
+                                const jsonObj = JSON.parse(rawContentFromTemplate);
+                                displayContent = JSON.stringify(jsonObj, null, 2);
+                            } catch (jsonError) {
+                                console.error("解析 JSON 時出錯:", jsonError);
+                                displayContent = rawContentFromTemplate; // 解析失敗則顯示原始內容
+                            }
+                        } else {
+                             displayContent = rawContentFromTemplate; // 不是有效字串則直接顯示
+                         }
+                    } else if (documentFormat === 'yaml') {
+                        if (typeof YAML !== 'undefined' && typeof rawContentFromTemplate === 'string' && rawContentFromTemplate.trim()) {
+                             try {
+                                const yamlObj = YAML.parse(rawContentFromTemplate);
+                                displayContent = YAML.stringify(yamlObj, 4, 2);
+                             } catch (yamlError) {
+                                 console.error("解析 YAML 時出錯:", yamlError);
+                                 displayContent = rawContentFromTemplate; // 解析失敗顯示原始內容
+                             }
+                        } else {
+                             console.warn("YAML 庫未載入或內容無效，無法美化 YAML 內容。");
+                             displayContent = rawContentFromTemplate;
+                        }
+                    }
+                    codeContentEl.textContent = displayContent;
+                    hljs.highlightElement(codeContentEl);
+                 } catch (e) {
+                     console.error(`處理 ${documentFormat} 原始碼時發生錯誤:`, e);
+                     if (codeContentEl) codeContentEl.textContent = rawContentFromTemplate; // 錯誤時顯示原始內容
+                 }
+            }
+            
+            // 渲染 Markdown (如果需要)
+            if (documentFormat === 'markdown' && markdownContentEl) {
+                try {
+                     marked.setOptions({
+                        highlight: function(code, lang) {
+                            const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                            const options = language ? { language: language } : {}; 
+                            return hljs.highlight(code, options).value; 
+                        },
+                        langPrefix: 'hljs language-',
+                        gfm: true,
+                        breaks: true
+                    });
+                     // 修正：確保 rawContentFromTemplate 是字串
+                     markdownContentEl.innerHTML = marked.parse(String(rawContentFromTemplate || ''));
+                    // 渲染後再次高亮 Markdown 中的程式碼區塊
+                    markdownContentEl.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
+                    generateToc(); // 渲染 Markdown 後生成目錄
+                } catch (e) {
+                    console.error("渲染 Markdown 時出錯:", e);
+                    markdownContentEl.innerHTML = "<p class='text-danger'>渲染 Markdown 時發生錯誤。</p>";
+                }
+            } else if (documentFormat === 'html' && htmlContentEl) {
+                 generateToc(); 
+            } else {
+                 generateToc(); // 其他格式也嘗試生成目錄 (可能沒有標題)
+             }
+            
+             // ** 在生成目錄後，根據 localStorage 初始化 TOC 可見性 **
+             setTocVisibility(initialTocVisible);
+             // 如果目錄無內容，強制隱藏並禁用按鈕
+             const tocList = document.getElementById('toc-list');
+             if (tocList && tocList.children.length === 0) {
+                 setTocVisibility(false); 
+                 toggleTocBtn.disabled = true; // 禁用按鈕
+                 toggleTocBtn.title = "無目錄內容";
+             }
+
+            // 渲染/原始碼切換邏輯
+            if (viewRenderedBtn && viewSourceBtn && renderedContentEl && sourceContentEl) { // tocContainer 可能不存在
+                viewRenderedBtn.addEventListener('click', function() {
+                    if (renderedContentEl) renderedContentEl.classList.remove('d-none');
+                    if (sourceContentEl) sourceContentEl.classList.add('d-none');
+                    this.classList.add('active');
+                    if (viewSourceBtn) viewSourceBtn.classList.remove('active');
+                    // 切換回渲染視圖時，根據存儲的狀態決定是否顯示 TOC
+                    const shouldShowToc = localStorage.getItem(tocStorageKey) !== 'false';
+                     if (tocList && tocList.children.length > 0) { // 僅當有內容時才顯示
+                         setTocVisibility(shouldShowToc);
+                         toggleTocBtn.style.display = 'block'; // 確保按鈕可見
+                         toggleTocBtn.disabled = false;
+                     } else {
+                          setTocVisibility(false); // 無內容則保持隱藏
+                          toggleTocBtn.style.display = 'none'; // 隱藏按鈕
+                     }
+                });
+                
+                viewSourceBtn.addEventListener('click', function() {
+                    if (renderedContentEl) renderedContentEl.classList.add('d-none');
+                    if (sourceContentEl) sourceContentEl.classList.remove('d-none');
+                    this.classList.add('active');
+                    if (viewRenderedBtn) viewRenderedBtn.classList.remove('active');
+                    // 切換到原始碼時總是隱藏 TOC 和按鈕
+                    setTocVisibility(false); 
+                    toggleTocBtn.style.display = 'none'; 
+                });
+                
+                // 根據初始狀態設置激活按鈕和 TOC/按鈕 可見性
+                if (renderedContentEl && !renderedContentEl.classList.contains('d-none')) {
+                    // 初始為渲染視圖
+                    if (viewRenderedBtn) viewRenderedBtn.classList.add('active');
+                    // TOC 和按鈕的顯示已由 setTocVisibility 和後面的檢查處理
+                    if (tocList && tocList.children.length === 0) {
+                         toggleTocBtn.style.display = 'none'; // 如果初始無內容，隱藏按鈕
+                     } else {
+                          toggleTocBtn.style.display = 'block'; // 初始有內容，顯示按鈕
+                     }
+                 } else { 
+                      // 初始為原始碼視圖 或 渲染視圖被禁用
+                      if (viewSourceBtn) viewSourceBtn.classList.add('active'); 
+                      setTocVisibility(false); // 隱藏 TOC
+                      toggleTocBtn.style.display = 'none'; // 隱藏按鈕
+                 }
+            } else {
+                 console.warn("缺少切換按鈕或內容元素，無法啟用視圖切換功能。");
+                 // 如果缺少按鈕或內容元素，禁用切換功能並隱藏 TOC 和按鈕
+                 setTocVisibility(false);
+                 toggleTocBtn.style.display = 'none'; 
+            }
+            
+            // 深色模式處理
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            function applyTheme(isDark) {
+                 const body = document.body; // 確保 body 在函數作用域內
+                 const markdownBody = document.querySelector('.markdown-body'); // 獲取 markdown body
+
+                 if (isDark) {
+                    body.classList.add('dark-mode');
+                    if(markdownBody) markdownBody.classList.add('dark');
+                    // 不再檢查 darkModeToggle
+                 } else {
+                    body.classList.remove('dark-mode');
+                    if(markdownBody) markdownBody.classList.remove('dark');
+                    // 不再檢查 darkModeToggle
+                 }
+            }
+            
+            // 初始化主題
+            if (savedTheme) {
+                applyTheme(savedTheme === 'dark');
+            } else {
+                 applyTheme(prefersDark);
+            }
+
+            // 處理瀏覽器返回按鈕行為
+            window.addEventListener('popstate', function(event) {
+                // 檢查 URL 是否包含錨點鏈接 (#section-xxx)
+                const hasAnchor = window.location.hash && window.location.hash.length > 1;
+                
+                // 如果有錨點，不進行重定向，讓錨點導航正常工作
+                if (hasAnchor) {
+                    console.log("檢測到錨點導航:", window.location.hash);
+                    return;
+                }
+                
+                // 如果沒有錨點（真正的返回操作），則重定向到主頁面
+                window.location.href = '/#documents-panel';
+            });
+
+            // 修改歷史狀態記錄方式，使用自訂資料字段來標記是否是目錄錨點導航
+            if (!window.history.state) {
+                window.history.pushState({ page: 'view', initial: true }, document.title, window.location.href);
+            }
+            
+            // 為所有目錄錨點鏈接添加特殊處理
+            document.addEventListener('click', function(e) {
+                // 檢查是否點擊了目錄中的錨點鏈接
+                if (e.target && e.target.tagName === 'A' && e.target.hash && e.target.hash.length > 1) {
+                    // 檢查點擊的鏈接是否來自目錄
+                    const isFromToc = e.target.closest('#toc-list') !== null;
+                    
+                    if (isFromToc) {
+                        // 阻止默認行為
+                        e.preventDefault();
+                        
+                        // 獲取目標錨點
+                        const targetId = e.target.hash.substring(1);
+                        const targetElement = document.getElementById(targetId);
+                        
+                        if (targetElement) {
+                            // 獲取 sticky header 的高度作為偏移量
+                            const stickyHeader = document.querySelector('.card-header.sticky-header');
+                            const headerOffset = stickyHeader ? stickyHeader.offsetHeight + 10 : 60; // 加上一點額外空間
+                            
+                            // 計算目標元素的位置
+                            const elementPosition = targetElement.getBoundingClientRect().top;
+                            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                            
+                            // 使用更精確的滾動方法
+                            window.scrollTo({
+                                top: offsetPosition,
+                                behavior: 'smooth'
+                            });
+                            
+                            // 使用 replaceState 而非 pushState，避免創建新的歷史記錄
+                            window.history.replaceState(
+                                { page: 'view', tocNavigation: true, target: targetId },
+                                document.title,
+                                window.location.pathname + e.target.hash
+                            );
+                            
+                            // 確保標題獲得焦點 (輔助功能支援)
+                            setTimeout(() => {
+                                targetElement.setAttribute('tabindex', '-1');
+                                targetElement.focus({preventScroll: true});
+                            }, 500); // 等待滾動完成
+                        }
+                    }
+                }
+            });
+            
+            // 處理頁面載入時的錨點滾動，確保初始錨點也定位正確
+            if (window.location.hash && window.location.hash.length > 1) {
+                const initialTargetId = window.location.hash.substring(1);
+                const initialTargetElement = document.getElementById(initialTargetId);
+                
+                if (initialTargetElement) {
+                    // 等待頁面完全載入後執行滾動
+                    setTimeout(() => {
+                        // 獲取 sticky header 的高度作為偏移量
+                        const stickyHeader = document.querySelector('.card-header.sticky-header');
+                        const headerOffset = stickyHeader ? stickyHeader.offsetHeight + 10 : 60;
+                        
+                        // 計算目標元素的位置
+                        const elementPosition = initialTargetElement.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        
+                        // 滾動到目標位置
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }, 300); // 短暫延遲確保頁面已完全渲染
+                }
+            }
+        }); // 確保這是唯一的 DOMContentLoaded 結束符
+    </script>
+    
+</body>
+</html> 

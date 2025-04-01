@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>檔案轉換</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <!-- 深色模式樣式 -->
+    <style>
+        /* 深色模式開關在頁眉 */
+        #global-dark-mode-toggle {
+            /* 可選：添加一些間距 */
+            /* margin-left: auto; */
+        }
+        @media (max-width: 576px) {
+            #global-dark-mode-toggle .form-check-label {
+                display: none;
+            }
+        }
+
+        /* 完整的深色模式樣式 */
+        .dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+
+        /* 深色模式下的卡片樣式 */
+        .dark-mode .card {
+            background-color: #242424;
+            border-color: #444;
+        }
+
+        .dark-mode .card-header {
+            background-color: var(--bs-dark-card-cap-bg, #212529);
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        .dark-mode .card-body {
+            background-color: var(--bs-dark-card-bg, #242424);
+        }
+
+        /* 深色模式下的表單元素 */
+        .dark-mode .form-control,
+        .dark-mode .form-select {
+            background-color: #333;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .form-control:focus,
+        .dark-mode .form-select:focus {
+            background-color: #3a3a3a;
+            border-color: #0d6efd;
+            color: #fff;
+        }
+
+        .dark-mode .form-control::placeholder {
+            color: #999;
+        }
+
+        .dark-mode .form-check-input {
+            background-color: #333;
+            border-color: #555;
+        }
+
+        .dark-mode .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .dark-mode .form-text,
+        .dark-mode .form-label {
+            color: #ccc;
+        }
+
+        /* 深色模式下的按鈕樣式 */
+        .dark-mode .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: #fff;
+        }
+
+        .dark-mode .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: #fff;
+        }
+
+        .dark-mode .btn-outline-primary {
+            color: #58a6ff;
+            border-color: #58a6ff;
+        }
+
+        .dark-mode .btn-outline-primary:hover {
+            color: #fff;
+            background-color: #58a6ff;
+            border-color: #58a6ff;
+        }
+
+        .dark-mode .btn-outline-secondary {
+            color: #adb5bd;
+            border-color: #6c757d;
+        }
+
+        .dark-mode .btn-outline-secondary:hover {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        /* 深色模式下的導航標籤樣式 */
+        .dark-mode .nav-tabs {
+            border-bottom-color: #444;
+        }
+
+        .dark-mode .nav-tabs .nav-link {
+            color: #adb5bd;
+        }
+
+        .dark-mode .nav-tabs .nav-link:hover {
+            border-color: #444 #444 #444;
+            color: #fff;
+        }
+
+        .dark-mode .nav-tabs .nav-link.active {
+            color: #fff;
+            background-color: #242424;
+            border-color: #444 #444 #242424;
+        }
+
+        /* 深色模式下的警告框 */
+        .dark-mode .alert-success {
+            color: #d1e7dd;
+            background-color: #1d3832;
+            border-color: #25432c;
+        }
+
+        .dark-mode .alert-danger {
+            color: #f8d7da;
+            background-color: #3d1f21;
+            border-color: #542a2e;
+        }
+
+        /* 深色模式下的進度條 */
+        .dark-mode .progress {
+            background-color: #333;
+        }
+
+        /* 深色模式下的文本顏色 */
+        .dark-mode .text-muted {
+            color: #adb5bd !important;
+        }
+
+        .dark-mode .text-primary {
+            color: #58a6ff !important;
+        }
+
+        .dark-mode .text-danger {
+            color: #f77 !important;
+        }
+
+        /* 深色模式下的標題文字 */
+        .dark-mode h1,
+        .dark-mode h2,
+        .dark-mode h3,
+        .dark-mode h4,
+        .dark-mode h5,
+        .dark-mode h6 {
+            color: #e0e0e0;
+        }
+
+        /* 深色模式下的列表樣式 */
+        .dark-mode .list-group-item {
+            background-color: #242424;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .list-group-item-action:hover {
+            background-color: #2d2d2d;
+            color: #fff;
+        }
+        
+        /* 深色模式下的麵包屑 (Breadcrumb) */
+        .dark-mode .breadcrumb-item a {
+            color: #85b9ff; /* 讓連結顏色與普通連結一致 */
+        }
+        
+        .dark-mode .breadcrumb-item a:hover {
+            color: #aaccff;
+        }
+        
+        .dark-mode .breadcrumb-item.active {
+            color: #adb5bd; /* 使用較淺的灰色表示當前頁面 */
+        }
+
+        /* 深色模式下的鏈接 */
+        .dark-mode a {
+            color: #58a6ff;
+        }
+
+        .dark-mode a:hover {
+            color: #85b9ff;
+        }
+
+        /* 深色模式下的徽章 */
+        .dark-mode .badge {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="/">首頁</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">檔案轉換</li>
+                        </ol>
+                    </nav>
+                    
+                    <!-- 添加深色模式切換開關 -->
+                    <div class="form-check form-switch" id="global-dark-mode-toggle">
+                        <input class="form-check-input" type="checkbox" id="dark-mode-toggle">
+                        <label class="form-check-label" for="dark-mode-toggle">深色模式</label>
+                    </div>
+                </div>
+                
+                <h1 class="text-center mb-4">檔案轉換中心</h1>
+                
+                <!-- 直接顯示統一的檔案轉換面板 -->
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">檔案轉換</h5>
+                        <p class="card-text">上傳單一或多個檔案進行轉換，支援 PDF、Word、HTML、圖片等多種格式。</p>
+                        
+                        <form id="file-form" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="files-input" class="form-label">選擇檔案 (可多選)</label>
+                                <input type="file" class="form-control" id="files-input" name="files" multiple required>
+                                <div class="form-text">您可以選擇一個或多個檔案進行轉換</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">輸出格式</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="format" id="format-markdown" value="markdown" checked>
+                                        <label class="form-check-label" for="format-markdown">
+                                            Markdown
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="format" id="format-html" value="html">
+                                        <label class="form-check-label" for="format-html">
+                                            HTML
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="format" id="format-text" value="text">
+                                        <label class="form-check-label" for="format-text">
+                                            純文字
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="format" id="format-json" value="json">
+                                        <label class="form-check-label" for="format-json">
+                                            JSON
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="format" id="format-yaml" value="yaml">
+                                        <label class="form-check-label" for="format-yaml">
+                                            YAML
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="format" id="format-doctags" value="doctags">
+                                        <label class="form-check-label" for="format-doctags">
+                                            DocTags
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 包含進階選項組件 -->
+                            <div id="advanced-options">
+                                {% include "advanced_options.html" %}
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary" id="submit-button">開始轉換</button>
+                        </form>
+                        
+                        <!-- 進度指示器 -->
+                        <div id="progress-container" class="mt-3 d-none">
+                            <div class="progress mb-2">
+                                <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p id="progress-status" class="text-muted small mb-0">初始化中...</p>
+                                <span id="progress-percentage" class="badge bg-primary">0%</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 轉換結果顯示區域 -->
+                        <div id="result-container" class="mt-3 d-none">
+                            <div class="alert alert-success">
+                                <p id="result-summary">轉換完成！</p>
+                            </div>
+                            
+                            <h5 id="results-list-title" class="d-none">轉換結果：</h5>
+                            <div id="results-list" class="list-group mt-2"></div>
+                        </div>
+                        
+                        <!-- 錯誤顯示區域 -->
+                        <div id="error-container" class="mt-3 d-none">
+                            <div class="alert alert-danger">
+                                <p>轉換失敗。</p>
+                                <p id="error-message"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 已轉換檔案列表 -->
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong>最近轉換文件</strong>
+                        <button class="btn btn-sm btn-outline-secondary" id="refresh-documents-btn">
+                            <i class="bi bi-arrow-clockwise"></i> 重新整理
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="documents-list" class="list-group mt-2">
+                            <p class="text-center">載入中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 移除 singleProgressTimer
+            let progressTimer = null;
+            
+            // --- 深色模式相關 JS (保持不變) --- 
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const body = document.body;
+
+            function applyTheme(isDark) {
+                if (isDark) {
+                    body.classList.add('dark-mode');
+                    darkModeToggle.checked = true;
+                } else {
+                    body.classList.remove('dark-mode');
+                    darkModeToggle.checked = false;
+                }
+            }
+
+            // 初始化主題
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme) {
+                applyTheme(savedTheme === 'dark');
+            } else {
+                applyTheme(prefersDark);
+            }
+
+            // 監聽切換事件
+            darkModeToggle.addEventListener('change', function() {
+                const isDark = this.checked;
+                applyTheme(isDark);
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            });
+            // --- 深色模式相關 JS 結束 --- 
+            
+            // 額外的 Bootstrap 初始化 (保持不變)
+            document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(collapseEl => {
+                if (collapseEl.hasAttribute('href')) {
+                    const target = collapseEl.getAttribute('href');
+                    collapseEl.removeAttribute('href');
+                    if (!collapseEl.hasAttribute('data-bs-target')) {
+                        collapseEl.setAttribute('data-bs-target', target);
+                    }
+                }
+            });
+            
+            document.querySelectorAll('.nav-tabs .nav-link, [data-bs-toggle="tab"]').forEach(tabEl => {
+                tabEl.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+            
+            // 載入已轉換文件列表 (保持不變)
+            loadDocumentsList();
+            
+            // 更新進度的函數 (統一 ID)
+            function updateProgress(taskId) {
+                const progressBarId = 'progress-bar';
+                const progressStatusId = 'progress-status';
+                const progressPercentageId = 'progress-percentage';
+                const progressContainerId = 'progress-container';
+                const resultContainerId = 'result-container';
+                const errorContainerId = 'error-container';
+                const submitButtonId = 'submit-button';
+                
+                return fetch(`/progress/${taskId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('無法獲取進度資訊');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 更新進度條
+                        const progressBar = document.getElementById(progressBarId);
+                        progressBar.style.width = `${data.progress}%`;
+                        progressBar.setAttribute('aria-valuenow', data.progress);
+                        
+                        // 更新進度百分比
+                        document.getElementById(progressPercentageId).textContent = `${data.progress}%`;
+                        
+                        // 更新狀態文字
+                        document.getElementById(progressStatusId).textContent = data.message;
+                        
+                        // 如果處理完成或出錯，停止定時器
+                        if (data.status === 'complete' || data.status === 'error' || data.status === 'partial_error') {
+                            if (progressTimer) {
+                                clearInterval(progressTimer);
+                                progressTimer = null;
+                            }
+                            
+                            // 隱藏進度指示器
+                            document.getElementById(progressContainerId).classList.add('d-none');
+                            
+                            // 啟用提交按鈕
+                            document.getElementById(submitButtonId).disabled = false;
+                            document.getElementById(submitButtonId).innerHTML = '開始轉換';
+                            
+                            if (data.status === 'complete' || data.status === 'partial_error') {
+                                // 顯示成功訊息
+                                document.getElementById(resultContainerId).classList.remove('d-none');
+                                // 載入文件列表
+                                loadDocumentsList();
+                            } else { // error
+                                // 顯示錯誤訊息
+                                document.getElementById(errorContainerId).classList.remove('d-none');
+                                document.getElementById('error-message').textContent = data.message;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('更新進度時發生錯誤:', error);
+                        // 如果發生錯誤，停止定時器
+                        if (progressTimer) {
+                            clearInterval(progressTimer);
+                            progressTimer = null;
+                        }
+                        // 啟用按鈕並顯示錯誤
+                        const submitButton = document.getElementById(submitButtonId);
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '開始轉換';
+                        document.getElementById(errorContainerId).classList.remove('d-none');
+                        document.getElementById('error-message').textContent = '更新進度時發生錯誤: ' + error.message;
+                        document.getElementById(progressContainerId).classList.add('d-none');
+                    });
+            }
+            
+            // 移除單一檔案表單提交邏輯
+            
+            // 統一檔案表單提交 (原批量轉換邏輯，稍作調整)
+            document.getElementById('file-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 確認已選擇檔案
+                const filesInput = document.getElementById('files-input');
+                if (!filesInput.files || filesInput.files.length === 0) {
+                    alert('請選擇至少一個要轉換的檔案');
+                    return;
+                }
+                const fileCount = filesInput.files.length;
+                
+                // 顯示處理中狀態
+                const submitButton = document.getElementById('submit-button');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 處理中...';
+                document.getElementById('result-container').classList.add('d-none');
+                document.getElementById('error-container').classList.add('d-none');
+                document.getElementById('results-list').innerHTML = ''; // 清空上次結果
+                document.getElementById('results-list-title').classList.add('d-none'); // 隱藏結果標題
+                
+                // 顯示進度指示器
+                document.getElementById('progress-container').classList.remove('d-none');
+                document.getElementById('progress-bar').style.width = '0%';
+                document.getElementById('progress-bar').setAttribute('aria-valuenow', 0);
+                document.getElementById('progress-status').textContent = '初始化中...';
+                document.getElementById('progress-percentage').textContent = '0%';
+                
+                // 收集表單資料
+                const formData = new FormData(this);
+                
+                // 使用 /batch-convert 路由處理單一和多檔案
+                fetch('/batch-convert', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => { throw errorData; });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'complete' || data.status === 'partial_error' || data.status === 'success') { // 'success' for single file case in older versions potentially
+                        // 顯示結果
+                        const resultsList = document.getElementById('results-list');
+                        const resultSummary = document.getElementById('result-summary');
+                        const resultsListTitle = document.getElementById('results-list-title');
+                        resultsList.innerHTML = ''; // 清空
+
+                        if (data.results && data.results.length > 0) {
+                            if (data.results.length === 1) {
+                                // 單一檔案結果處理
+                                const result = data.results[0];
+                                if (result.status === 'success') {
+                                    resultSummary.textContent = `檔案 "${result.original_filename}" 轉換完成！`;
+                                    const item = document.createElement('div');
+                                    item.className = 'list-group-item list-group-item-action'; // 使用 action 樣式
+                                    item.innerHTML = `
+                                        <div class="d-flex w-100 justify-content-between align-items-center">
+                                            <strong>${result.output_filename}</strong>
+                                            <div>
+                                                <a href="/view/${result.output_filename}" class="btn btn-sm btn-outline-primary">檢視</a>
+                                                <a href="/output/${result.output_filename}" class="btn btn-sm btn-outline-secondary" download>下載</a>
+                                            </div>
+                                        </div>
+                                    `;
+                                    resultsList.appendChild(item);
+                                    resultsListTitle.classList.remove('d-none'); // 顯示結果列表標題
+                                } else {
+                                    resultSummary.textContent = `檔案 "${result.original_filename}" 轉換失敗。`;
+                                    document.getElementById('error-message').textContent = result.error || '未知錯誤';
+                                    document.getElementById('error-container').classList.remove('d-none');
+                                }
+                            } else {
+                                // 多檔案結果處理
+                                resultSummary.textContent = data.message || '批量轉換完成！';
+                                data.results.forEach(result => {
+                                    const item = document.createElement('div');
+                                    item.className = `list-group-item ${result.status === 'error' ? 'list-group-item-danger' : 'list-group-item-action'}`;
+                                    let actionButtons = '';
+                                    if (result.status === 'success') {
+                                        actionButtons = `
+                                            <a href="/view/${result.output_filename}" class="btn btn-sm btn-outline-primary">檢視</a>
+                                            <a href="/output/${result.output_filename}" class="btn btn-sm btn-outline-secondary" download>下載</a>
+                                        `;
+                                    } else {
+                                         actionButtons = `<span class="text-danger small">失敗: ${result.error || '未知錯誤'}</span>`;
+                                    }
+                                    item.innerHTML = `
+                                        <div class="d-flex w-100 justify-content-between align-items-center">
+                                            <div>
+                                                <strong>${result.original_filename}</strong>
+                                                ${result.status === 'success' ? `→ ${result.output_filename}` : ''}
+                                            </div>
+                                            <div>
+                                                ${actionButtons}
+                                            </div>
+                                        </div>
+                                    `;
+                                    resultsList.appendChild(item);
+                                });
+                                resultsListTitle.classList.remove('d-none'); // 顯示結果列表標題
+                            }
+                        }
+                        
+                        // 啟動進度更新定時器
+                        if (progressTimer) {
+                            clearInterval(progressTimer);
+                        }
+                        
+                        progressTimer = setInterval(() => {
+                            updateProgress(data.task_id);
+                        }, 1000);
+                        
+                    } else { // Handle other non-ok initial statuses from backend
+                         document.getElementById('progress-container').classList.add('d-none');
+                         submitButton.disabled = false;
+                         submitButton.innerHTML = '開始轉換';
+                         document.getElementById('error-message').textContent = data.detail || data.message || '啟動轉換時發生未知錯誤';
+                         document.getElementById('error-container').classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('progress-container').classList.add('d-none');
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '開始轉換';
+                    
+                    let errorMessage = '請求失敗';
+                    if (error && error.detail) {
+                         errorMessage = typeof error.detail === 'string' ? error.detail : JSON.stringify(error.detail);
+                    } else if (error && error.message) {
+                        errorMessage = error.message;
+                    } else if (typeof error === 'object') {
+                        errorMessage = JSON.stringify(error);
+                    }
+                    console.error("完整錯誤詳情:", error);
+                    
+                    document.getElementById('error-message').textContent = errorMessage;
+                    document.getElementById('error-container').classList.remove('d-none');
+                });
+            });
+            
+            // 載入已轉換文件列表 (保持不變)
+            function loadDocumentsList() {
+                fetch('/documents')
+                    .then(response => response.json())
+                    .then(data => {
+                        const documentsListElement = document.getElementById('documents-list');
+                        documentsListElement.innerHTML = ''; // Clear previous list
+                        
+                        if (data.documents && data.documents.length > 0) {
+                            let html = '';
+                            const recentDocs = data.documents.slice(0, 10);
+                            
+                            recentDocs.forEach(doc => {
+                                const docDate = new Date(doc.created * 1000);
+                                const dateStr = docDate.toLocaleString();
+                                const sizeInKb = (doc.size / 1024).toFixed(1);
+                                
+                                let formatBadge = '';
+                                switch(doc.format) {
+                                    case 'markdown': formatBadge = '<span class="badge bg-primary">Markdown</span>'; break;
+                                    case 'json': formatBadge = '<span class="badge bg-success">JSON</span>'; break;
+                                    case 'yaml': formatBadge = '<span class="badge bg-warning">YAML</span>'; break;
+                                    case 'html': formatBadge = '<span class="badge bg-info">HTML</span>'; break;
+                                    case 'text': formatBadge = '<span class="badge bg-secondary">純文字</span>'; break;
+                                    case 'doctags': formatBadge = '<span class="badge bg-dark">DocTags</span>'; break;
+                                    default: formatBadge = `<span class="badge bg-secondary">${doc.format}</span>`;
+                                }
+                                
+                                html += `
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${doc.filename}</h6>
+                                        <small class="text-muted">${dateStr}</small> 
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <p class="mb-0 text-muted small">
+                                            ${formatBadge} <span class="ms-2">大小: ${sizeInKb} KB</span>
+                                        </p>
+                                        <div>
+                                            <a href="/view/${doc.filename}" class="btn btn-sm btn-outline-primary">檢視</a>
+                                            <a href="/output/${doc.filename}" class="btn btn-sm btn-outline-secondary" download>下載</a>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            });
+                            documentsListElement.innerHTML = html;
+                        } else {
+                            documentsListElement.innerHTML = '<p class="text-center text-muted">尚無已轉換文件</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('無法載入文件列表：', error);
+                        const documentsListElement = document.getElementById('documents-list');
+                        documentsListElement.innerHTML = '<p class="text-center text-danger">載入文件列表時發生錯誤</p>';
+                    });
+            }
+            
+            // 文件列表重新整理按鈕 (保持不變)
+            document.getElementById('refresh-documents-btn').addEventListener('click', loadDocumentsList);
+            
+            // 處理進階選項顯示/隱藏 (保持不變)
+            const advancedOptionsHeader = document.querySelector('.card-header[data-bs-toggle="collapse"]');
+            const advancedOptionsContent = document.getElementById('advancedOptionsContent');
+            
+            if (advancedOptionsHeader && advancedOptionsContent) {
+                advancedOptionsContent.addEventListener('show.bs.collapse', function() {
+                    advancedOptionsHeader.querySelector('i').classList.remove('bi-chevron-down');
+                    advancedOptionsHeader.querySelector('i').classList.add('bi-chevron-up');
+                });
+                
+                advancedOptionsContent.addEventListener('hide.bs.collapse', function() {
+                    advancedOptionsHeader.querySelector('i').classList.remove('bi-chevron-up');
+                    advancedOptionsHeader.querySelector('i').classList.add('bi-chevron-down');
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

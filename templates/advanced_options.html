@@ -1,0 +1,413 @@
+<!-- Docling 進階選項組件 -->
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#advancedOptionsContent" role="button" aria-expanded="false" aria-controls="advancedOptionsContent">
+    <strong>進階選項</strong>
+    <i class="bi bi-chevron-down"></i>
+  </div>
+  <div class="collapse" id="advancedOptionsContent">
+    <div class="card-body">
+      <!-- 選項分類 -->
+      <ul class="nav nav-tabs mb-3" id="advancedOptionsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="format-tab" data-bs-toggle="tab" data-bs-target="#format-tab-pane" type="button" role="tab" aria-controls="format-tab-pane" aria-selected="true">輸出選項</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="pipeline-tab" data-bs-toggle="tab" data-bs-target="#pipeline-tab-pane" type="button" role="tab" aria-controls="pipeline-tab-pane" aria-selected="false">處理管道</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="ocr-tab" data-bs-toggle="tab" data-bs-target="#ocr-tab-pane" type="button" role="tab" aria-controls="ocr-tab-pane" aria-selected="false">OCR 選項</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="enhancement-tab" data-bs-toggle="tab" data-bs-target="#enhancement-tab-pane" type="button" role="tab" aria-controls="enhancement-tab-pane" aria-selected="false">內容增強</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance-tab-pane" type="button" role="tab" aria-controls="performance-tab-pane" aria-selected="false">效能選項</button>
+        </li>
+      </ul>
+      
+      <!-- 分頁內容 -->
+      <div class="tab-content" id="advancedOptionsTabContent">
+        <!-- 輸出選項 -->
+        <div class="tab-pane fade show active" id="format-tab-pane" role="tabpanel" aria-labelledby="format-tab" tabindex="0">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">輸出格式</label>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="format" id="format-markdown" value="markdown" checked>
+                  <label class="form-check-label" for="format-markdown">Markdown</label>
+                  <small class="form-text text-muted d-block">標準 Markdown 格式，適合大多數情況</small>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="format" id="format-html" value="html">
+                  <label class="form-check-label" for="format-html">HTML</label>
+                  <small class="form-text text-muted d-block">HTML 格式，保留更多排版資訊</small>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="format" id="format-text" value="text">
+                  <label class="form-check-label" for="format-text">純文字</label>
+                  <small class="form-text text-muted d-block">移除所有格式的純文字內容</small>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="format" id="format-json" value="json">
+                  <label class="form-check-label" for="format-json">JSON</label>
+                  <small class="form-text text-muted d-block">結構化 JSON 格式，適合程式處理</small>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="format" id="format-yaml" value="yaml">
+                  <label class="form-check-label" for="format-yaml">YAML</label>
+                  <small class="form-text text-muted d-block">結構化 YAML 格式，適合程式處理</small>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="format" id="format-doctags" value="doctags">
+                  <label class="form-check-label" for="format-doctags">DocTags</label>
+                  <small class="form-text text-muted d-block">專用標記格式，包含文件結構標籤</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="image-export-mode" class="form-label">圖片處理模式</label>
+                <select class="form-select" id="image-export-mode" name="image_export_mode">
+                  <option value="embedded">內嵌模式 (Base64)</option>
+                  <option value="referenced" selected>引用模式 (獨立檔案)</option>
+                  <option value="placeholder">僅佔位符 (不含圖片)</option>
+                </select>
+                <small class="form-text text-muted">選擇文件中圖片的處理方式</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 處理管道 -->
+        <div class="tab-pane fade" id="pipeline-tab-pane" role="tabpanel" aria-labelledby="pipeline-tab" tabindex="0">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="pipeline" class="form-label">PDF 處理管道</label>
+                <select class="form-select" id="pipeline" name="pipeline">
+                  <option value="standard" selected>標準管道</option>
+                  <option value="vlm">VLM 管道 (視覺語言模型)</option>
+                </select>
+                <small class="form-text text-muted">標準管道適合一般文件，VLM 管道使用 AI 視覺模型處理複雜內容</small>
+              </div>
+              
+              <div class="mb-3 vlm-options" style="display: none;">
+                <label for="vlm-model" class="form-label">VLM 模型</label>
+                <select class="form-select" id="vlm-model" name="vlm_model">
+                  <option value="smoldocling" selected>SmolDocling</option>
+                  <option value="granite-vision">Granite Vision</option>
+                </select>
+                <small class="form-text text-muted">選擇用於處理內容的視覺語言模型</small>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="pdf-backend" class="form-label">PDF 後端</label>
+                <select class="form-select" id="pdf-backend" name="pdf_backend">
+                  <option value="dlparse_v2" selected>DoclingParse V2</option>
+                  <option value="dlparse_v1">DoclingParse V1</option>
+                  <option value="dlparse_v4">DoclingParse V4</option>
+                  <option value="pypdfium2">PyPDFium2</option>
+                </select>
+                <small class="form-text text-muted">選擇用於解析 PDF 的底層後端</small>
+              </div>
+              
+              <div class="mb-3">
+                <label for="table-mode" class="form-label">表格處理模式</label>
+                <select class="form-select" id="table-mode" name="table_mode">
+                  <option value="accurate" selected>精確模式</option>
+                  <option value="fast">快速模式</option>
+                </select>
+                <small class="form-text text-muted">精確模式更準確但較慢，快速模式較快但可能較不精確</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- OCR 選項 -->
+        <div class="tab-pane fade" id="ocr-tab-pane" role="tabpanel" aria-labelledby="ocr-tab" tabindex="0">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3 form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="ocr" name="ocr" checked>
+                <label class="form-check-label" for="ocr">啟用 OCR</label>
+                <small class="form-text text-muted d-block">對圖像部分進行文字識別</small>
+              </div>
+              
+              <div class="mb-3 form-check form-switch ocr-options">
+                <input class="form-check-input" type="checkbox" id="force-ocr" name="force_ocr">
+                <label class="form-check-label" for="force-ocr">強制 OCR 整頁</label>
+                <small class="form-text text-muted d-block">忽略現有文字，對整頁進行 OCR</small>
+              </div>
+            </div>
+            
+            <div class="col-md-6 ocr-options">
+              <div class="mb-3">
+                <label for="ocr-engine" class="form-label">OCR 引擎</label>
+                <select class="form-select" id="ocr-engine" name="ocr_engine">
+                  <option value="easyocr" selected>EasyOCR</option>
+                  <!-- 其他 OCR 引擎選項將由 JavaScript 動態載入 -->
+                </select>
+                <small class="form-text text-muted">選擇用於文字識別的 OCR 引擎</small>
+              </div>
+              
+              <div class="mb-3">
+                <label for="ocr-lang" class="form-label">OCR 語言</label>
+                <input type="text" class="form-control" id="ocr-lang" name="ocr_lang" placeholder="例如: en,zh_tw,ja">
+                <small class="form-text text-muted">以逗號分隔的語言代碼列表，依引擎有不同的支援語言</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 內容增強 -->
+        <div class="tab-pane fade" id="enhancement-tab-pane" role="tabpanel" aria-labelledby="enhancement-tab" tabindex="0">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3 form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="enrich-code" name="enrich_code">
+                <label class="form-check-label" for="enrich-code">程式碼增強</label>
+                <small class="form-text text-muted d-block">改善程式碼區塊的格式與語法高亮</small>
+              </div>
+              
+              <div class="mb-3 form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="enrich-formula" name="enrich_formula">
+                <label class="form-check-label" for="enrich-formula">公式增強</label>
+                <small class="form-text text-muted d-block">改善數學公式的格式</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 效能選項 -->
+        <div class="tab-pane fade" id="performance-tab-pane" role="tabpanel" aria-labelledby="performance-tab" tabindex="0">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="num-threads" class="form-label">執行緒數量</label>
+                <input type="number" class="form-control" id="num-threads" name="num_threads" min="1" max="32" value="4">
+                <small class="form-text text-muted">用於處理的執行緒數量，建議設為 CPU 核心數</small>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="device" class="form-label">加速裝置</label>
+                <select class="form-select" id="device" name="device">
+                  <option value="auto" selected>自動選擇</option>
+                  <option value="cpu">CPU</option>
+                  <option value="cuda">CUDA (NVIDIA GPU)</option>
+                  <option value="mps">MPS (Apple Silicon)</option>
+                </select>
+                <small class="form-text text-muted">選擇用於加速處理的硬體裝置</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer text-muted">
+      <small>提示：大多數情況下，預設選項即可產生良好結果</small>
+    </div>
+  </div>
+</div>
+
+<!-- 動態控制選項顯示的JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 額外的 Bootstrap 初始化，確保 Tab 和 Collapse 組件正確工作
+    // 初始化所有摺疊面板
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(collapseEl => {
+      // 移除可能導致頁面跳轉的 href 屬性
+      if (collapseEl.hasAttribute('href')) {
+        const target = collapseEl.getAttribute('href');
+        collapseEl.removeAttribute('href');
+        if (!collapseEl.hasAttribute('data-bs-target')) {
+          collapseEl.setAttribute('data-bs-target', target);
+        }
+      }
+    });
+    
+    // 管理 OCR 選項的顯示
+    const ocrCheckbox = document.getElementById('ocr');
+    const ocrOptions = document.querySelectorAll('.ocr-options');
+    
+    function toggleOcrOptions() {
+      const isChecked = ocrCheckbox.checked;
+      ocrOptions.forEach(element => {
+        if (isChecked) {
+          element.style.display = '';
+        } else {
+          element.style.display = 'none';
+        }
+      });
+    }
+    
+    ocrCheckbox.addEventListener('change', toggleOcrOptions);
+    toggleOcrOptions(); // 初始化
+    
+    // 管理 VLM 選項的顯示
+    const pipelineSelect = document.getElementById('pipeline');
+    const vlmOptions = document.querySelectorAll('.vlm-options');
+    
+    function toggleVlmOptions() {
+      const isVlm = pipelineSelect.value === 'vlm';
+      vlmOptions.forEach(element => {
+        element.style.display = isVlm ? '' : 'none';
+      });
+    }
+    
+    pipelineSelect.addEventListener('change', toggleVlmOptions);
+    toggleVlmOptions(); // 初始化
+    
+    // 載入 OCR 引擎選項
+    function loadOcrEngines() {
+      fetch('/api/ocr-engines')
+        .then(response => response.json())
+        .then(data => {
+          const ocrEngineSelect = document.getElementById('ocr-engine');
+          // 清空現有選項
+          ocrEngineSelect.innerHTML = '';
+          
+          // 添加引擎選項
+          data.engines.forEach(engine => {
+            const option = document.createElement('option');
+            option.value = engine.name;
+            option.textContent = engine.name + (engine.is_external ? ' (外部)' : '');
+            ocrEngineSelect.appendChild(option);
+          });
+          
+          // 設定預設選項
+          ocrEngineSelect.value = 'easyocr';
+        })
+        .catch(error => {
+          console.error('無法加載 OCR 引擎列表:', error);
+        });
+    }
+    
+    // 嘗試載入 OCR 引擎選項
+    try {
+      loadOcrEngines();
+    } catch (e) {
+      console.error('載入 OCR 引擎時出錯:', e);
+    }
+    
+    // 處理進階選項的展開/收起圖示變換
+    const advancedOptionsHeader = document.querySelector('.card-header[data-bs-toggle="collapse"]');
+    const advancedOptionsContent = document.getElementById('advancedOptionsContent');
+    
+    if (advancedOptionsHeader && advancedOptionsContent) {
+      // 監聽 Bootstrap 摺疊事件，而不是自定義點擊處理
+      advancedOptionsContent.addEventListener('show.bs.collapse', function() {
+        advancedOptionsHeader.querySelector('i').classList.remove('bi-chevron-down');
+        advancedOptionsHeader.querySelector('i').classList.add('bi-chevron-up');
+      });
+      
+      advancedOptionsContent.addEventListener('hide.bs.collapse', function() {
+        advancedOptionsHeader.querySelector('i').classList.remove('bi-chevron-up');
+        advancedOptionsHeader.querySelector('i').classList.add('bi-chevron-down');
+      });
+      
+      /*
+      advancedOptionsHeader.addEventListener('click', function() {
+        const isCollapsed = !advancedOptionsContent.classList.contains('show');
+        if (isCollapsed) {
+          this.querySelector('i').classList.remove('bi-chevron-down');
+          this.querySelector('i').classList.add('bi-chevron-up');
+        } else {
+          this.querySelector('i').classList.remove('bi-chevron-up');
+          this.querySelector('i').classList.add('bi-chevron-down');
+        }
+      });
+      */
+    }
+    
+    // 初始化 Bootstrap Tabs
+    var triggerTabList = [].slice.call(document.querySelectorAll('#advancedOptionsTabs button'));
+    triggerTabList.forEach(function (triggerEl) {
+      triggerEl.addEventListener('click', function (event) {
+        event.preventDefault(); // 阻止默認行為，防止頁面跳轉
+        event.stopPropagation(); // 阻止事件冒泡
+        
+        try {
+          // 實例化 Bootstrap Tab 對象
+          var tab = bootstrap.Tab.getInstance(triggerEl);
+          if (!tab) {
+            tab = new bootstrap.Tab(triggerEl);
+          }
+          tab.show();
+        } catch (e) {
+          console.error('Tab 初始化錯誤:', e);
+          
+          // 手動切換標籤頁
+          var target = triggerEl.getAttribute('data-bs-target');
+          if (target) {
+            // 隱藏所有標籤頁
+            document.querySelectorAll('.tab-pane').forEach(function(pane) {
+              pane.classList.remove('show', 'active');
+            });
+            
+            // 移除所有標籤的活躍狀態
+            document.querySelectorAll('#advancedOptionsTabs button').forEach(function(btn) {
+              btn.classList.remove('active');
+              btn.setAttribute('aria-selected', 'false');
+            });
+            
+            // 顯示目標標籤頁
+            var targetPane = document.querySelector(target);
+            if (targetPane) {
+              targetPane.classList.add('show', 'active');
+            }
+            
+            // 設置點擊的按鈕為活躍
+            triggerEl.classList.add('active');
+            triggerEl.setAttribute('aria-selected', 'true');
+          }
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+    /* 進階選項樣式 */
+    .advanced-options-toggle {
+        cursor: pointer;
+    }
+    .dark-mode .card,
+    .dark-mode .card-header,
+    .dark-mode .card-body {
+        background-color: #242424;
+        border-color: #444;
+        color: #e0e0e0;
+    }
+    .dark-mode .nav-tabs {
+        border-bottom-color: #444;
+    }
+    .dark-mode .nav-link {
+        color: #adb5bd;
+    }
+    .dark-mode .nav-tabs .nav-link.active {
+        color: #fff;
+        background-color: #242424;
+        border-color: #444 #444 #242424;
+    }
+    .dark-mode .form-control,
+    .dark-mode .form-select {
+        background-color: #333;
+        border-color: #555;
+        color: #e0e0e0;
+    }
+    .dark-mode label {
+        color: #e0e0e0;
+    }
+    .dark-mode .form-check-input {
+        background-color: #333;
+        border-color: #555;
+    }
+    .dark-mode .form-text {
+        color: #adb5bd;
+    }
+</style> 

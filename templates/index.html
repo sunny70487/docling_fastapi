@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Docling 文件轉換</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <style>
+        /* 深色模式開關在頁眉 */
+        #global-dark-mode-toggle {
+            /* 可選：添加一些間距 */
+            /* margin-left: auto; */
+        }
+        @media (max-width: 576px) {
+            #global-dark-mode-toggle .form-check-label {
+                display: none;
+            }
+        }
+
+        /* 完整的深色模式樣式 */
+        .dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+
+        /* 深色模式下的卡片樣式 */
+        .dark-mode .card {
+            background-color: #242424;
+            border-color: #444;
+        }
+
+        .dark-mode .card-header {
+            background-color: var(--bs-dark-card-cap-bg, #212529);
+            color: #e0e0e0;
+            border-color: #444;
+        }
+
+        .dark-mode .card-body {
+            background-color: var(--bs-dark-card-bg, #242424);
+        }
+
+        /* 深色模式下的表單元素 */
+        .dark-mode .form-control,
+        .dark-mode .form-select {
+            background-color: #333;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .form-control:focus,
+        .dark-mode .form-select:focus {
+            background-color: #3a3a3a;
+            border-color: #0d6efd;
+            color: #fff;
+        }
+
+        .dark-mode .form-control::placeholder {
+            color: #999;
+        }
+
+        .dark-mode .form-check-input {
+            background-color: #333;
+            border-color: #555;
+        }
+
+        .dark-mode .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .dark-mode .form-text,
+        .dark-mode .form-label {
+            color: #ccc;
+        }
+
+        /* 深色模式下的按鈕樣式 */
+        .dark-mode .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: #fff;
+        }
+
+        .dark-mode .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: #fff;
+        }
+
+        .dark-mode .btn-outline-primary {
+            color: #58a6ff;
+            border-color: #58a6ff;
+        }
+
+        .dark-mode .btn-outline-primary:hover {
+            color: #fff;
+            background-color: #58a6ff;
+            border-color: #58a6ff;
+        }
+
+        .dark-mode .btn-outline-secondary {
+            color: #adb5bd;
+            border-color: #6c757d;
+        }
+
+        .dark-mode .btn-outline-secondary:hover {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        /* 深色模式下的導航標籤樣式 */
+        .dark-mode .nav-tabs {
+            border-bottom-color: #444;
+        }
+
+        .dark-mode .nav-tabs .nav-link {
+            color: #adb5bd;
+        }
+
+        .dark-mode .nav-tabs .nav-link:hover {
+            border-color: #444 #444 #444;
+            color: #fff;
+        }
+
+        .dark-mode .nav-tabs .nav-link.active {
+            color: #fff;
+            background-color: #242424;
+            border-color: #444 #444 #242424;
+        }
+
+        /* 深色模式下的警告框 */
+        .dark-mode .alert-success {
+            color: #d1e7dd;
+            background-color: #1d3832;
+            border-color: #25432c;
+        }
+
+        .dark-mode .alert-danger {
+            color: #f8d7da;
+            background-color: #3d1f21;
+            border-color: #542a2e;
+        }
+
+        /* 深色模式下的進度條 */
+        .dark-mode .progress {
+            background-color: #333;
+        }
+
+        /* 深色模式下的文本顏色 */
+        .dark-mode .text-muted {
+            color: #adb5bd !important;
+        }
+
+        .dark-mode .text-primary {
+            color: #58a6ff !important;
+        }
+
+        .dark-mode .text-danger {
+            color: #f77 !important;
+        }
+
+        /* 深色模式下的標題文字 */
+        .dark-mode h1,
+        .dark-mode h2,
+        .dark-mode h3,
+        .dark-mode h4,
+        .dark-mode h5,
+        .dark-mode h6 {
+            color: #e0e0e0;
+        }
+
+        /* 深色模式下的列表樣式 */
+        .dark-mode .list-group-item {
+            background-color: #242424;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+
+        .dark-mode .list-group-item-action:hover {
+            background-color: #2d2d2d;
+            color: #fff;
+        }
+
+        /* 深色模式下的鏈接 */
+        .dark-mode a {
+            color: #58a6ff;
+        }
+
+        .dark-mode a:hover {
+            color: #85b9ff;
+        }
+
+        /* 深色模式下的徽章 */
+        .dark-mode .badge {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <!-- 頁眉：包含標題和深色模式開關 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+             <h1 class="mb-0">Docling 文件轉換</h1>
+             <div class="form-check form-switch" id="global-dark-mode-toggle">
+                 <input class="form-check-input" type="checkbox" id="dark-mode-toggle">
+                 <label class="form-check-label" for="dark-mode-toggle">深色模式</label>
+             </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-10 offset-md-1">
+                <ul class="nav nav-tabs" id="conversionTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-panel" type="button" role="tab" aria-controls="url-panel" aria-selected="true">URL 轉換</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-panel" type="button" role="tab" aria-controls="file-panel" aria-selected="false">檔案轉換</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch-panel" type="button" role="tab" aria-controls="batch-panel" aria-selected="false">使用說明</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents-panel" type="button" role="tab" aria-controls="documents-panel" aria-selected="false">已轉換文件</button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content mt-3" id="conversionTabContent">
+                    <!-- URL 轉換面板 -->
+                    <div class="tab-pane fade show active" id="url-panel" role="tabpanel" aria-labelledby="url-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">URL 轉換</h5>
+                                <form id="url-form">
+                                    <div class="mb-3">
+                                        <label for="url-source" class="form-label">文件 URL</label>
+                                        <input type="text" class="form-control" id="url-source" name="source" placeholder="https://arxiv.org/pdf/2408.09869" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="url-output" class="form-label">輸出檔案名稱 (選填)</label>
+                                        <input type="text" class="form-control" id="url-output" name="output_filename" placeholder="my_document">
+                                    </div>
+                                    
+                                    <!-- 添加隱藏欄位確保與後端參數匹配 -->
+                                    <input type="hidden" name="ocr_enabled" value="false" id="url-ocr-enabled">
+                                    <input type="hidden" name="extract_tables" value="true">
+                                    <input type="hidden" name="preserve_images" value="true">
+                                    <input type="hidden" name="extract_links" value="true">
+                                    <input type="hidden" name="merge_hyphenated_words" value="true">
+                                    <input type="hidden" name="preserve_document_structure" value="true">
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">基本輸出格式</label>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="format" id="url-format-markdown" value="markdown" checked>
+                                                <label class="form-check-label" for="url-format-markdown">
+                                                    Markdown
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="format" id="url-format-html" value="html">
+                                                <label class="form-check-label" for="url-format-html">
+                                                    HTML
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="format" id="url-format-text" value="text">
+                                                <label class="form-check-label" for="url-format-text">
+                                                    純文字
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="format" id="url-format-json" value="json">
+                                                <label class="form-check-label" for="url-format-json">
+                                                    JSON
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="format" id="url-format-yaml" value="yaml">
+                                                <label class="form-check-label" for="url-format-yaml">
+                                                    YAML
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="format" id="url-format-doctags" value="doctags">
+                                                <label class="form-check-label" for="url-format-doctags">
+                                                    DocTags
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 包含進階選項組件 -->
+                                    {% include "advanced_options.html" %}
+                                    
+                                    <button type="submit" class="btn btn-primary" id="url-submit">轉換</button>
+                                </form>
+                                
+                                <!-- 進度指示器 -->
+                                <div id="url-progress-container" class="mt-3 d-none">
+                                    <div class="progress mb-2">
+                                        <div id="url-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <p id="url-progress-status" class="text-muted small mb-0">初始化中...</p>
+                                        <span id="url-progress-percentage" class="badge bg-primary">0%</span>
+                                    </div>
+                                </div>
+                                
+                                <div id="url-result" class="mt-3 d-none">
+                                    <div class="alert alert-success">
+                                        <p>轉換完成！</p>
+                                        <p>
+                                            <a href="#" id="url-view-link" class="btn btn-sm btn-outline-primary">檢視文件</a>
+                                            <a href="#" id="url-download-link" class="btn btn-sm btn-outline-secondary" download>下載文件</a>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div id="url-error" class="mt-3 d-none">
+                                    <div class="alert alert-danger">
+                                        <p>轉換失敗。</p>
+                                        <p id="url-error-message"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 檔案轉換面板 -->
+                    <div class="tab-pane fade" id="file-panel" role="tabpanel" aria-labelledby="file-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">檔案轉換</h5>
+                                <p class="card-text">上傳並轉換檔案，支援單一檔案或批量轉換，包含 PDF、Word、HTML、圖片等多種格式。</p>
+                                <a href="/file-convert" class="btn btn-primary">進入檔案轉換頁面</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 使用說明面板 (原批量轉換面板) -->
+                    <div class="tab-pane fade" id="batch-panel" role="tabpanel" aria-labelledby="batch-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">使用說明</h5>
+                                <div class="mb-4">
+                                    <h6>轉換方式說明</h6>
+                                    <ul>
+                                        <li><strong>URL 轉換</strong> - 直接從網頁連結轉換文件，適合處理網路上的資源</li>
+                                        <li><strong>檔案轉換</strong> - 上傳本機檔案進行轉換，支援單一檔案或批量檔案處理</li>
+                                    </ul>
+                                </div>
+                                <div class="mb-4">
+                                    <h6>支援的檔案格式</h6>
+                                    <ul>
+                                        <li><strong>輸入格式</strong>: PDF、Word (.docx)、HTML、圖片 (PNG, JPG, TIFF)、純文字</li>
+                                        <li><strong>輸出格式</strong>: Markdown、HTML、JSON、YAML、純文字、DocTags</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h6>進階功能</h6>
+                                    <p>在轉換選項中，您可以設定：</p>
+                                    <ul>
+                                        <li>OCR 辨識 - 用於圖片或掃描檔案的文字辨識</li>
+                                        <li>表格處理 - 提取和轉換表格內容</li>
+                                        <li>圖片處理 - 控制圖片的輸出方式</li>
+                                        <li>內容增強 - 對程式碼、公式等特殊內容進行增強處理</li>
+                                    </ul>
+                                </div>
+                                <a href="/file-convert" class="btn btn-primary mt-3">進入檔案轉換頁面</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 已轉換文件面板 -->
+                    <div class="tab-pane fade" id="documents-panel" role="tabpanel" aria-labelledby="documents-tab">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">已轉換文件</h5>
+                                <div class="mb-3">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="documents-search" placeholder="搜尋文件...">
+                                        <button class="btn btn-outline-secondary" type="button" id="documents-refresh">
+                                            <i class="bi bi-arrow-clockwise"></i> 重新整理
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="documents-list" class="list-group mt-3">
+                                    <p class="text-center">載入中...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 文件加載完成後執行
+        document.addEventListener('DOMContentLoaded', function() {
+            let urlProgressTimer = null;
+            let fileProgressTimer = null;
+            
+            // 載入版本資訊
+            fetchVersionInfo();
+            
+            // 載入文件列表
+            loadDocumentsList();
+            
+            // 處理 OCR 核取方塊的變更事件，以同步 ocr_enabled 隱藏欄位
+            document.getElementById('ocr').addEventListener('change', function() {
+                document.getElementById('url-ocr-enabled').value = this.checked;
+            });
+            
+            // 更新進度的函數
+            function updateProgress(taskId, progressBarId, progressStatusId, progressPercentageId, progressContainerId, resultContainerId, errorContainerId, viewLinkId, downloadLinkId, submitButtonId) {
+                return fetch(`/progress/${taskId}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('無法獲取進度資訊');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 更新進度條
+                        const progressBar = document.getElementById(progressBarId);
+                        progressBar.style.width = `${data.progress}%`;
+                        progressBar.setAttribute('aria-valuenow', data.progress);
+                        
+                        // 更新進度百分比
+                        document.getElementById(progressPercentageId).textContent = `${data.progress}%`;
+                        
+                        // 更新狀態文字
+                        document.getElementById(progressStatusId).textContent = data.message;
+                        
+                        // 如果處理完成或出錯，停止定時器
+                        if (data.status === 'complete' || data.status === 'error') {
+                            if (progressBarId === 'url-progress-bar') {
+                                clearInterval(urlProgressTimer);
+                                urlProgressTimer = null;
+                            } else {
+                                clearInterval(fileProgressTimer);
+                                fileProgressTimer = null;
+                            }
+                            
+                            // 隱藏進度指示器
+                            document.getElementById(progressContainerId).classList.add('d-none');
+                            
+                            // 啟用提交按鈕
+                            document.getElementById(submitButtonId).disabled = false;
+                            document.getElementById(submitButtonId).innerHTML = '轉換';
+                            
+                            if (data.status === 'complete') {
+                                // 顯示成功訊息
+                                document.getElementById(resultContainerId).classList.remove('d-none');
+                            } else {
+                                // 顯示錯誤訊息
+                                document.getElementById(errorContainerId).classList.remove('d-none');
+                                document.getElementById(`${errorContainerId}-message`).textContent = data.message;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('更新進度時發生錯誤:', error);
+                        // 如果發生錯誤，停止定時器
+                        if (progressBarId === 'url-progress-bar') {
+                            clearInterval(urlProgressTimer);
+                            urlProgressTimer = null;
+                        } else {
+                            clearInterval(fileProgressTimer);
+                            fileProgressTimer = null;
+                        }
+                    });
+            }
+            
+            // URL 表單提交
+            document.getElementById('url-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 收集表單資料
+                const formData = new FormData(this);
+                
+                // 顯示處理中狀態
+                document.getElementById('url-submit').disabled = true;
+                document.getElementById('url-submit').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 處理中...';
+                document.getElementById('url-result').classList.add('d-none');
+                document.getElementById('url-error').classList.add('d-none');
+                
+                // 顯示進度指示器
+                document.getElementById('url-progress-container').classList.remove('d-none');
+                document.getElementById('url-progress-bar').style.width = '0%';
+                document.getElementById('url-progress-bar').setAttribute('aria-valuenow', 0);
+                document.getElementById('url-progress-status').textContent = '初始化中...';
+                document.getElementById('url-progress-percentage').textContent = '0%';
+                
+                // 將 FormData 轉換為查詢參數
+                const params = new URLSearchParams();
+                for(const pair of formData.entries()) {
+                    params.append(pair[0], pair[1]);
+                }
+                
+                // 使用 URLSearchParams 作為查詢參數發送請求
+                fetch('/convert-url?' + params.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errorData => {
+                            throw errorData;
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        // 設置查看鏈接
+                        document.getElementById('url-view-link').href = `/view/${data.output_filename}`;
+                        
+                        // 設置下載鏈接
+                        const downloadLink = document.getElementById('url-download-link');
+                        downloadLink.href = `/output/${data.output_filename}`;
+                        downloadLink.download = data.output_filename;
+                        
+                        // 啟動進度更新定時器
+                        if (urlProgressTimer) {
+                            clearInterval(urlProgressTimer);
+                        }
+                        
+                        urlProgressTimer = setInterval(() => {
+                            updateProgress(
+                                data.task_id,
+                                'url-progress-bar',
+                                'url-progress-status',
+                                'url-progress-percentage',
+                                'url-progress-container',
+                                'url-result',
+                                'url-error',
+                                'url-view-link',
+                                'url-download-link',
+                                'url-submit'
+                            );
+                        }, 1000);
+                    } else {
+                        document.getElementById('url-progress-container').classList.add('d-none');
+                        document.getElementById('url-submit').disabled = false;
+                        document.getElementById('url-submit').innerHTML = '轉換';
+                        document.getElementById('url-error-message').textContent = data.detail || '未知錯誤';
+                        document.getElementById('url-error').classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('url-progress-container').classList.add('d-none');
+                    document.getElementById('url-submit').disabled = false;
+                    document.getElementById('url-submit').innerHTML = '轉換';
+                    
+                    // 處理各種可能的錯誤格式
+                    let errorMessage = '請求失敗';
+                    if (error.detail) {
+                        errorMessage = typeof error.detail === 'string' ? error.detail : JSON.stringify(error.detail);
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    } else if (typeof error === 'object') {
+                        errorMessage = JSON.stringify(error);
+                    }
+                    
+                    // 提供更多詳細的錯誤資訊
+                    console.error("完整錯誤詳情:", error);
+                    
+                    document.getElementById('url-error-message').textContent = errorMessage;
+                    document.getElementById('url-error').classList.remove('d-none');
+                });
+            });
+            
+            // 載入已轉換文件列表
+            function loadDocumentsList() {
+                fetch('/documents')
+                    .then(response => response.json())
+                    .then(data => {
+                        const documentsListElement = document.getElementById('documents-list');
+                        
+                        if (data.documents && data.documents.length > 0) {
+                            let html = '';
+                            data.documents.forEach(doc => {
+                                const docDate = new Date(doc.created * 1000);
+                                const dateStr = docDate.toLocaleString();
+                                const sizeInKb = (doc.size / 1024).toFixed(1);
+                                
+                                let formatBadge = '';
+                                switch(doc.format) {
+                                    case 'markdown':
+                                        formatBadge = '<span class="badge bg-primary">Markdown</span>';
+                                        break;
+                                    case 'json':
+                                        formatBadge = '<span class="badge bg-success">JSON</span>';
+                                        break;
+                                    case 'yaml':
+                                        formatBadge = '<span class="badge bg-warning">YAML</span>';
+                                        break;
+                                    case 'html':
+                                        formatBadge = '<span class="badge bg-info">HTML</span>';
+                                        break;
+                                    case 'text':
+                                        formatBadge = '<span class="badge bg-secondary">純文字</span>';
+                                        break;
+                                    case 'doctags':
+                                        formatBadge = '<span class="badge bg-dark">DocTags</span>';
+                                        break;
+                                    default:
+                                        formatBadge = `<span class="badge bg-secondary">${doc.format}</span>`;
+                                }
+                                
+                                html += `
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${doc.filename}</h6>
+                                        <small>${dateStr}</small>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <p class="mb-1 text-muted small">
+                                            ${formatBadge} <span class="ms-2">檔案大小: ${sizeInKb} KB</span>
+                                        </p>
+                                        <div>
+                                            <a href="/view/${doc.filename}" class="btn btn-sm btn-outline-primary">檢視</a>
+                                            <a href="/output/${doc.filename}" class="btn btn-sm btn-outline-secondary" download>下載</a>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            });
+                            documentsListElement.innerHTML = html;
+                        } else {
+                            documentsListElement.innerHTML = '<p class="text-center">尚無任何已轉換文件</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('無法載入文件列表：', error);
+                        const documentsListElement = document.getElementById('documents-list');
+                        documentsListElement.innerHTML = '<p class="text-center text-danger">載入文件列表時發生錯誤</p>';
+                    });
+            }
+            
+            // 文件搜尋功能
+            document.getElementById('documents-search').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const documentItems = document.querySelectorAll('#documents-list .list-group-item');
+                
+                documentItems.forEach(item => {
+                    const title = item.querySelector('h6').innerText.toLowerCase();
+                    if (title.includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+            
+            // 文件列表重新整理
+            document.getElementById('documents-refresh').addEventListener('click', loadDocumentsList);
+            
+            // 載入版本資訊
+            function fetchVersionInfo() {
+                fetch('/version')
+                    .then(response => response.json())
+                    .then(data => {
+                        const versionInfoElement = document.getElementById('version-info');
+                        
+                        let versionHtml = '<p>';
+                        if (data.version) {
+                            versionHtml += `<strong>版本：</strong> ${data.version}<br>`;
+                        }
+                        if (data.build_date) {
+                            versionHtml += `<strong>建立日期：</strong> ${data.build_date}<br>`;
+                        }
+                        if (data.supported_formats) {
+                            versionHtml += `<strong>支援格式：</strong> ${data.supported_formats.join(', ')}<br>`;
+                        }
+                        if (data.supported_ocr_engines) {
+                            versionHtml += `<strong>OCR引擎：</strong> ${data.supported_ocr_engines.join(', ')}`;
+                        }
+                        versionHtml += '</p>';
+                        
+                        versionInfoElement.innerHTML = versionHtml;
+                    })
+                    .catch(error => {
+                        console.error('無法載入版本資訊：', error);
+                        const versionInfoElement = document.getElementById('version-info');
+                        versionInfoElement.innerHTML = '<p class="small text-danger">無法載入版本資訊</p>';
+                    });
+            }
+
+            // --- 深色模式相關 JS --- 
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const body = document.body;
+
+            function applyTheme(isDark) {
+                if (isDark) {
+                    body.classList.add('dark-mode');
+                    darkModeToggle.checked = true;
+                } else {
+                    body.classList.remove('dark-mode');
+                    darkModeToggle.checked = false;
+                }
+            }
+
+            // 初始化主題
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme) {
+                applyTheme(savedTheme === 'dark');
+            } else {
+                applyTheme(prefersDark);
+            }
+
+            // 監聽切換事件
+            darkModeToggle.addEventListener('change', function() {
+                const isDark = this.checked;
+                applyTheme(isDark);
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            });
+            // --- 深色模式相關 JS 結束 --- 
+
+            // 定義激活文件列表標籤的函數，便於重複使用
+            function activateDocumentsTab() {
+                const documentsTab = document.getElementById('documents-tab');
+                if (documentsTab) {
+                    const tab = new bootstrap.Tab(documentsTab);
+                    tab.show();
+                    // 載入文件列表
+                    loadDocumentsList();
+                }
+            }
+
+            // 根據 hash 激活對應標籤的通用函數
+            function activateTabByHash(hash) {
+                let tabId = null;
+                
+                switch(hash) {
+                    case '#url-panel':
+                        tabId = 'url-tab';
+                        break;
+                    case '#file-panel':
+                        tabId = 'file-tab';
+                        break;
+                    case '#batch-panel':
+                        tabId = 'batch-tab';
+                        break;
+                    case '#documents-panel':
+                        tabId = 'documents-tab';
+                        // 載入文件列表
+                        loadDocumentsList();
+                        break;
+                    default:
+                        return; // 找不到對應標籤
+                }
+                
+                const tabElement = document.getElementById(tabId);
+                if (tabElement) {
+                    const tab = new bootstrap.Tab(tabElement);
+                    tab.show();
+                }
+            }
+
+            // 當頁面載入時，檢查 hash 並激活對應 tab
+            if (window.location.hash) {
+                activateTabByHash(window.location.hash);
+            } else {
+                // 預設載入文件列表 (如果沒有 hash)
+                loadDocumentsList();
+            }
+
+            // 監聽 hash 變更事件，當 URL 中的 hash 變化時激活對應標籤
+            window.addEventListener('hashchange', function() {
+                if (window.location.hash) {
+                    activateTabByHash(window.location.hash);
+                }
+            });
+
+            // 為每個標籤添加點擊事件，使其更新 URL hash
+            document.querySelectorAll('.nav-link').forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    const targetPanel = this.getAttribute('data-bs-target');
+                    if (targetPanel) {
+                        window.history.pushState(null, '', targetPanel);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
