@@ -178,3 +178,4 @@ cython_debug/
 docker_images/
 uploads/
 static/images/
+output/
