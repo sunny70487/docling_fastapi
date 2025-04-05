@@ -15,6 +15,42 @@ from docling_core.types.doc import ImageRefMode
 from services import image_service, doclingservice
 from config import UPLOADS_DIR, OUTPUT_DIR, Config
 
+# 新增檔名清理函數
+def sanitize_filename(filename: str, max_length: int = 200) -> str:
+    """清理檔名，移除不安全字元並限制長度"""
+    if not filename:
+        return "_default_filename_"
+
+    # 移除或替換不允許的字元 (允許字母、數字、底線、連字號、點)
+    sanitized = re.sub(r'[^a-zA-Z0-9_.-]', '_', filename)
+
+    # 替換多個連續底線為單個底線
+    sanitized = re.sub(r'_+', '_', sanitized)
+
+    # 移除開頭和結尾的底線、連字號、點
+    sanitized = sanitized.strip('_-.')
+
+    # 如果清理後為空，則返回默認名稱
+    if not sanitized:
+        return "_default_filename_"
+
+    # 限制檔名長度 (保留副檔名)
+    if len(sanitized) > max_length:
+        name_part, ext_part = os.path.splitext(sanitized)
+        available_length = max_length - len(ext_part)
+        if available_length < 1: # 如果副檔名本身就超長或接近最大長度
+             # 截斷整個字串，即使可能破壞副檔名
+             sanitized = sanitized[:max_length]
+        else:
+             sanitized = name_part[:available_length] + ext_part
+
+    # 再次確保不以特殊字元結尾 (截斷可能導致)
+    sanitized = sanitized.strip('_-.')
+    if not sanitized:
+        return "_default_filename_" # 如果只剩特殊字元被移除
+
+    return sanitized
+
 def save_uploaded_file(file: UploadFile) -> Path:
     """儲存上傳的檔案到 uploads 目錄"""
     try:
@@ -138,6 +174,13 @@ async def export_document(
     else:
         file_basename = str(document_id)
     
+    # 在此處清理 file_basename
+    file_basename = sanitize_filename(file_basename)
+
+    # 如果清理後 file_basename 為空，給予一個 UUID 作為 fallback
+    if not file_basename:
+        file_basename = f"doc_{uuid.uuid4().hex[:8]}"
+
     # 如果沒有指定輸出目錄，使用配置中的默認目錄
     out_dir_path = out_dir_path or Config.OUTPUT_DIR
     
@@ -176,10 +219,17 @@ async def export_document(
     if result is not None:
         # JSON 格式不處理圖片
         if export_format == "json":
+            extension = ".json"
             if out_path:
-                output_path = Path(out_path)
+                original_path = Path(out_path)
+                sanitized_name = sanitize_filename(original_path.name)
+                # 如果清理後名稱不含副檔名，補上
+                if not sanitized_name.endswith(extension):
+                     sanitized_name += extension
+                output_path = original_path.parent / sanitized_name
             else:
-                output_path = output_dir / f"{file_basename}.json"
+                # 使用已清理的 file_basename
+                output_path = output_dir / f"{file_basename}{extension}"
             
             # 直接從 result.document 獲取 JSON
             json_data = result.document.export_to_dict()
@@ -196,10 +246,16 @@ async def export_document(
         
         # 處理 HTML 匯出
         if export_format in ["html", "html-single"]:
+            extension = ".html"
             if out_path:
-                output_path = Path(out_path)
+                original_path = Path(out_path)
+                sanitized_name = sanitize_filename(original_path.name)
+                if not sanitized_name.endswith(extension):
+                     sanitized_name += extension
+                output_path = original_path.parent / sanitized_name
             else:
-                output_path = output_dir / f"{file_basename}.html"
+                # 使用已清理的 file_basename
+                output_path = output_dir / f"{file_basename}{extension}"
             
             # 獲取 HTML，以 EMBEDDED 模式
             html_content = result.document.export_to_html(image_mode=docling_image_mode)
@@ -225,10 +281,16 @@ async def export_document(
         
         # 處理 Markdown 匯出
         if export_format == "markdown":
+            extension = ".md"
             if out_path:
-                output_path = Path(out_path)
+                original_path = Path(out_path)
+                sanitized_name = sanitize_filename(original_path.name)
+                if not sanitized_name.endswith(extension):
+                     sanitized_name += extension
+                output_path = original_path.parent / sanitized_name
             else:
-                output_path = output_dir / f"{file_basename}.md"
+                # 使用已清理的 file_basename
+                output_path = output_dir / f"{file_basename}{extension}"
             
             # 獲取 Markdown，以 EMBEDDED 模式
             markdown_content = result.document.export_to_markdown(image_mode=docling_image_mode)
@@ -258,11 +320,17 @@ async def export_document(
     else:
         # JSON 格式不處理圖片
         if export_format == "json":
+            extension = ".json"
             if out_path:
-                output_path = Path(out_path)
+                original_path = Path(out_path)
+                sanitized_name = sanitize_filename(original_path.name)
+                if not sanitized_name.endswith(extension):
+                     sanitized_name += extension
+                output_path = original_path.parent / sanitized_name
             else:
-                output_path = output_dir / f"{file_basename}.json"
-            
+                # 使用已清理的 file_basename
+                output_path = output_dir / f"{file_basename}{extension}"
+
             document_json = await doclingservice.get_document_as_json(document_id)
             
             if in_memory:
@@ -277,11 +345,17 @@ async def export_document(
         
         # 處理 HTML 匯出
         if export_format in ["html", "html-single"]:
+            extension = ".html"
             if out_path:
-                output_path = Path(out_path)
+                original_path = Path(out_path)
+                sanitized_name = sanitize_filename(original_path.name)
+                if not sanitized_name.endswith(extension):
+                     sanitized_name += extension
+                output_path = original_path.parent / sanitized_name
             else:
-                output_path = output_dir / f"{file_basename}.html"
-            
+                # 使用已清理的 file_basename
+                output_path = output_dir / f"{file_basename}{extension}"
+
             # 從 docling 獲取 HTML 內容，使用 EMBEDDED 模式
             html_content = await doclingservice.get_document_as_html(
                 document_id, docling_image_mode, single_file=export_format == "html-single"
@@ -308,11 +382,17 @@ async def export_document(
         
         # 處理 Markdown 匯出
         if export_format == "markdown":
+            extension = ".md"
             if out_path:
-                output_path = Path(out_path)
+                original_path = Path(out_path)
+                sanitized_name = sanitize_filename(original_path.name)
+                if not sanitized_name.endswith(extension):
+                     sanitized_name += extension
+                output_path = original_path.parent / sanitized_name
             else:
-                output_path = output_dir / f"{file_basename}.md"
-            
+                # 使用已清理的 file_basename
+                output_path = output_dir / f"{file_basename}{extension}"
+
             # 從 docling 獲取 Markdown 內容，使用 EMBEDDED 模式
             markdown_content = await doclingservice.get_document_as_markdown(document_id, docling_image_mode)
             

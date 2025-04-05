@@ -11,6 +11,27 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.2.12/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/yaml.js/2.0.0/yaml.min.js"></script>
+    <!-- 添加 MathJax 支援 -->
+    <script type="text/javascript" id="MathJax-script" async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    <script>
+      // 配置 MathJax
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],  // 行內公式分隔符
+          displayMath: [['$$', '$$'], ['\\[', '\\]']], // 區塊公式分隔符
+          processEscapes: true,      // 使用 \$ 來顯示字面上的 $ 符號
+          processEnvironments: true  // 處理 LaTeX 環境
+        },
+        svg: {
+          fontCache: 'global'        // 保存字體緩存以加快渲染速度
+        },
+        startup: {
+          typeset: false             // 手動觸發渲染
+        }
+      };
+    </script>
     <style>
         /* 深色模式開關 - 不再固定 */
         /* #global-dark-mode-toggle { ... } */ /* 移除 fixed 定位 */
@@ -621,6 +642,7 @@
             // 渲染 Markdown (如果需要)
             if (documentFormat === 'markdown' && markdownContentEl) {
                 try {
+                     // 設定 marked 處理選項
                      marked.setOptions({
                         highlight: function(code, lang) {
                             const language = hljs.getLanguage(lang) ? lang : 'plaintext';
@@ -629,20 +651,90 @@
                         },
                         langPrefix: 'hljs language-',
                         gfm: true,
-                        breaks: true
+                        breaks: true,
+                        // 添加自訂 renderer 以保護數學公式
+                        renderer: (function() {
+                            const renderer = new marked.Renderer();
+                            
+                            // 保存原始的文本處理函數
+                            const originalText = renderer.text;
+                            
+                            // 定義一個函數來暫時替換數學公式為佔位符，以防被干擾
+                            const mathExpressions = [];
+                            function protectMathExpressions(text) {
+                                // 用於匹配行內和區塊數學公式
+                                const patterns = [
+                                    /\\\[([\s\S]*?)\\\]/g,     // \[ ... \]
+                                    /\\\(([\s\S]*?)\\\)/g,     // \( ... \)
+                                    /\$\$([\s\S]*?)\$\$/g,     // $$ ... $$
+                                    /(?<!\$)\$(?!\$)((?:\\.|[^\$])*?)\$(?!\$)/g // $ ... $ (排除 $$ 的情況)
+                                ];
+                                
+                                // 替換所有數學表達式為佔位符
+                                for (const pattern of patterns) {
+                                    text = text.replace(pattern, (match, expr) => {
+                                        const index = mathExpressions.length;
+                                        mathExpressions.push(match);
+                                        return `MATH_EXPR_${index}`;
+                                    });
+                                }
+                                
+                                return text;
+                            }
+                            
+                            // 定義一個函數來還原佔位符為原始數學公式
+                            function restoreMathExpressions(html) {
+                                for (let i = 0; i < mathExpressions.length; i++) {
+                                    html = html.replace(`MATH_EXPR_${i}`, mathExpressions[i]);
+                                }
+                                return html;
+                            }
+                            
+                            // 重寫文本處理函數
+                            renderer.text = function(text) {
+                                // 先保護數學表達式
+                                const protectedText = protectMathExpressions(text);
+                                // 使用原始處理函數
+                                const processedHtml = originalText.call(this, protectedText);
+                                // 還原數學表達式
+                                return restoreMathExpressions(processedHtml);
+                            };
+                            
+                            return renderer;
+                        })()
                     });
+                    
                      // 修正：確保 rawContentFromTemplate 是字串
                      markdownContentEl.innerHTML = marked.parse(String(rawContentFromTemplate || ''));
+
                     // 渲染後再次高亮 Markdown 中的程式碼區塊
                     markdownContentEl.querySelectorAll('pre code').forEach((block) => {
                         hljs.highlightElement(block);
                     });
+                    
+                    // 渲染數學公式
+                    if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                        MathJax.typesetPromise()
+                            .catch(function (err) {
+                                console.error('MathJax 公式渲染錯誤:', err);
+                            });
+                    } else {
+                        console.warn('MathJax 未載入，數學公式可能無法正確顯示');
+                    }
+                    
                     generateToc(); // 渲染 Markdown 後生成目錄
                 } catch (e) {
                     console.error("渲染 Markdown 時出錯:", e);
                     markdownContentEl.innerHTML = "<p class='text-danger'>渲染 Markdown 時發生錯誤。</p>";
                 }
             } else if (documentFormat === 'html' && htmlContentEl) {
+                 // 為 HTML 內容也渲染數學公式
+                 if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                     MathJax.typesetPromise()
+                         .catch(function (err) {
+                             console.error('MathJax HTML 公式渲染錯誤:', err);
+                         });
+                 }
                  generateToc(); 
             } else {
                  generateToc(); // 其他格式也嘗試生成目錄 (可能沒有標題)

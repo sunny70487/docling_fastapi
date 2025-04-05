@@ -12,7 +12,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="pydantic|
 warnings.filterwarnings(action="ignore", category=FutureWarning, module="easyocr")
 
 # Initialize FastAPI app
-app = FastAPI(title="Docling 文件轉換應用程式 (Refactored)")
+app = FastAPI(title="Docling 文件轉換應用程式")
 
 # --- Static Files and Templates ---
 app.mount("/static", StaticFiles(directory="static"), name="static")
